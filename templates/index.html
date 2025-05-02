@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fire Alarm Submittal Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'fire-red': {
+                            50: '#fff5f5',
+                            100: '#fed7d7',
+                            500: '#e53e3e',
+                            600: '#c53030',
+                            700: '#9b2c2c'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for accordions */
+        summary {
+            list-style: none; /* Remove default list marker */
+            position: relative;
+            padding-left: 1rem; /* Adjust padding */
+        }
+        summary::-webkit-details-marker {
+            display: none; /* Hide default marker for Webkit browsers */
+        }
+        /* Arrow styling removed */
+
+        /* Styles for manufacturer logos in list */
+        .manufacturer-logo {
+            object-fit: contain;    /* Keep aspect ratio */
+            vertical-align: middle; /* Align image nicely */
+            /* background-color removed for transparency */
+            border-radius: 3px;     /* Optional rounded corners */
+        }
+
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+        /* Form focus states */
+        .custom-focus:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.3);
+            border-color: #e53e3e;
+        }
+
+        /* Animation for details opening/closing */
+        .details-content {
+            transition: max-height 0.3s ease-out;
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        details[open] .details-content {
+            max-height: 9999px; /* Large value for expansion */
+        }
+
+        /* Checkbox custom styling */
+        .custom-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s;
+        }
+
+        .custom-checkbox:hover {
+            background-color: #f7fafc; /* Light hover effect */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans leading-normal min-h-screen">
+    <div class="container mx-auto px-4 py-6 md:py-12">
+        <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-fire-red-600 to-fire-red-700 p-6 md:p-8">
+               <img src="/static/images/logos/marmic_header_logo.png"  {# Assumes file saved here #}
+                     alt="Marmic Fire & Safety Logo"
+                     class="h-16 md:h-20 w-auto mx-auto block mb-4"  {# Centered, with height and bottom margin #}
+                     onerror="this.style.display='none'"> {# Hide if logo fails to load #}
+
+                <h1 class="text-2xl md:text-3xl font-bold text-white text-center">
+                    Fire Alarm Submittal Generator
+                </h1>
+                <p class="text-fire-red-100 text-center mt-2">
+                </p>
+            </div>
+
+            <form action="/generate" method="post" class="p-6 md:p-8">
+                <div class="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50 shadow-sm">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-fire-red-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                        </svg>
+                        Cover Page Details
+                    </h2>
+                    <div class="md:grid md:grid-cols-2 md:gap-6">
+                        <div class="mb-4 md:mb-0">
+                            <label for="project_name" class="block mb-2 font-medium text-gray-700">Project Name:</label>
+                            <input type="text" id="project_name" name="project_name" required
+                                   placeholder="Enter the project name"
+                                   class="w-full p-3 border border-gray-300 rounded-lg custom-focus bg-white">
+                        </div>
+                        <div>
+                            <label for="project_number" class="block mb-2 font-medium text-gray-700">Project Number:</label>
+                            <input type="text" id="project_number" name="project_number"
+                                   placeholder="Enter project number (optional)"
+                                   class="w-full p-3 border border-gray-300 rounded-lg custom-focus bg-white">
+                        </div>
+                    </div>
+                    <div class="mt-4 md:grid md:grid-cols-2 md:gap-6">
+                        <div class="mb-4 md:mb-0">
+                            <label for="detail1" class="block mb-2 font-medium text-gray-700">Location/Address:</label>
+                            <input type="text" id="detail1" name="detail1"
+                                   placeholder="Project location or address"
+                                   class="w-full p-3 border border-gray-300 rounded-lg custom-focus bg-white">
+                        </div>
+                        <div>
+                            <label for="detail2" class="block mb-2 font-medium text-gray-700">Submitted By:</label>
+                            <input type="text" id="detail2" name="detail2"
+                                   placeholder="Your name or company"
+                                   class="w-full p-3 border border-gray-300 rounded-lg custom-focus bg-white">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 md:mb-0 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-fire-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+                            </svg>
+                            Select Equipment & Parts
+                        </h2>
+                        <div class="flex space-x-2 mb-4 md:mb-0">
+                            <button type="button" onclick="selectAll(true)"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-4 rounded-md transition duration-200 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                Select All
+                            </button>
+                            <button type="button" onclick="selectAll(false)"
+                                    class="bg-gray-500 hover:bg-gray-600 text-white text-sm py-2 px-4 rounded-md transition duration-200 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                Deselect All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative mb-4">
+                        <input type="text" id="parts-filter" placeholder="Filter parts by name or code..."
+                               class="w-full p-3 pl-10 border border-gray-300 rounded-lg custom-focus bg-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <button type="button" id="clear-filter" class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600" style="display: none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+
+                    <div id="no-matches-message" class="hidden text-center p-4 bg-gray-50 border border-gray-200 rounded-lg mb-4">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p class="text-gray-500">No parts match your search</p>
+                    </div>
+
+                    <div class="manufacturer-list-container border border-gray-300 rounded-lg p-4 bg-gray-50 max-h-[60vh] overflow-y-auto custom-scrollbar shadow-inner">
+                        {% if manufacturers %}
+                            {% for manufacturer, data in manufacturers.items()|sort %} {# Sort manufacturers alphabetically for consistent order #}
+                            <details class="border border-gray-200 rounded-lg mb-4 bg-white shadow-sm overflow-hidden manufacturer-section">
+                                <summary class="font-semibold p-4 bg-gray-100 hover:bg-gray-200 cursor-pointer border-b border-gray-200 transition duration-200 flex justify-between items-center">
+                                    <div class="flex items-center truncate mr-2">
+                                        <img src="{{ data.logo_url }}"
+                                             alt="{{ manufacturer }} Logo"
+                                             class="manufacturer-logo w-12 h-12 mr-4 flex-shrink-0" {# Logo size #}
+                                             onerror="this.onerror=null; this.src='/static/images/logos/default_placeholder.png';"> {# Fallback #}
+                                        <span class="text-lg truncate">{{ manufacturer }}</span>
+                                        <span class="text-sm text-gray-500 ml-2 whitespace-nowrap">({{ data.parts|length }} items)</span>
+                                    </div>
+                                    <span class="text-fire-red-500 text-sm part-counter whitespace-nowrap">0 selected</span>
+                                </summary>
+                                <div class="details-content p-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {% for code, name in data.parts.items()|sort %} {# Sort parts by code #}
+                                        <div class="part-item border border-gray-200 rounded-lg p-3 bg-white hover:shadow-md transition duration-200 part-container">
+                                            <label class="custom-checkbox flex items-start cursor-pointer w-full">
+                                                <input type="checkbox" name="parts" value="{{ code }}"
+                                                       class="part-checkbox mr-3 h-5 w-5 mt-0.5 text-fire-red-600 border-gray-300 rounded focus:ring-fire-red-500 flex-shrink-0"
+                                                       onchange="updateCounter(this)">
+                                                <div class="w-full min-w-0 overflow-hidden">
+                                                    <span class="part-code font-bold text-gray-800 block truncate">{{ code }}</span>
+                                                    <span class="part-name text-sm text-gray-600 block mt-1 break-words">{{ name }}</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        {% else %}
+                                            <p class="p-4 text-gray-500 italic col-span-full">No parts listed for this manufacturer.</p>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </details>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center p-8">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <p class="mt-4 text-gray-500">No manufacturers or parts defined in the database.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="text-center pt-6 border-t border-gray-200">
+                    <button type="submit" class="bg-fire-red-600 hover:bg-fire-red-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-300 ease-in-out shadow-md hover:shadow-lg flex items-center mx-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Generate Submittal Package
+                    </button>
+                    <p class="text-sm text-gray-500 mt-3">Creates a comprehensive PDF with all selected components</p>
+                </div>
+            </form>
+        </div>
+
+        <footer class="mt-8 text-center text-sm text-gray-500">
+            <p>Fire Alarm Submittal Generator &copy; 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        // Select/Deselect all functionality
+        function selectAll(checked) {
+            const checkboxes = document.querySelectorAll('.manufacturer-list-container input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = checked;
+                updateCounter(checkbox); // Update counter for each checkbox changed
+            });
+        }
+
+        // Update counters for each manufacturer section
+        function updateCounter(checkbox) {
+            const detailsElement = checkbox.closest('details');
+            if (!detailsElement) return; // Exit if the checkbox is not within a details element
+
+            const counter = detailsElement.querySelector('.part-counter');
+            const checkboxes = detailsElement.querySelectorAll('input[type="checkbox"]');
+            const checkedCount = Array.from(checkboxes).filter(box => box.checked).length;
+
+            if (counter) {
+                counter.textContent = `${checkedCount} selected`;
+            }
+
+            // Highlight the summary if items are selected
+            const summary = detailsElement.querySelector('summary');
+            if (summary) {
+                if (checkedCount > 0) {
+                    summary.classList.add('bg-blue-50'); // Use a light blue background
+                    summary.classList.remove('bg-gray-100');
+                } else {
+                    summary.classList.remove('bg-blue-50');
+                    summary.classList.add('bg-gray-100'); // Revert to default gray
+                }
+            }
+        }
+
+        // Setup filter functionality
+        const filterInput = document.getElementById('parts-filter');
+        const clearFilterBtn = document.getElementById('clear-filter');
+        const noMatchesDisplay = document.getElementById('no-matches-message');
+        const manufacturerSections = document.querySelectorAll('.manufacturer-section');
+
+        filterInput.addEventListener('input', function(e) {
+            const filterValue = e.target.value.toLowerCase().trim();
+            let anyMatchFound = false;
+
+            // Show/hide clear button based on filter input
+            clearFilterBtn.style.display = filterValue ? 'block' : 'none';
+
+            manufacturerSections.forEach(section => {
+                const partContainers = section.querySelectorAll('.part-container');
+                let sectionHasVisibleParts = false;
+
+                // Filter parts within the section
+                partContainers.forEach(container => {
+                    const code = container.querySelector('.part-code')?.textContent.toLowerCase() || '';
+                    const name = container.querySelector('.part-name')?.textContent.toLowerCase() || '';
+                    const isMatch = filterValue === '' || code.includes(filterValue) || name.includes(filterValue);
+
+                    if (isMatch) {
+                        container.style.display = ''; // Show matching part
+                        sectionHasVisibleParts = true;
+                        anyMatchFound = true;
+                    } else {
+                        container.style.display = 'none'; // Hide non-matching part
+                    }
+                });
+
+                // Check if manufacturer name matches filter
+                const manufacturerName = section.querySelector('summary span.text-lg')?.textContent.toLowerCase() || '';
+                const manufacturerMatch = manufacturerName.includes(filterValue);
+
+                // Show/hide the entire manufacturer section
+                if (filterValue === '' || sectionHasVisibleParts || manufacturerMatch) {
+                    section.style.display = ''; // Show section
+                    const detailsElement = section; // section is the <details> element
+                    // Auto-open section if filtering and it has matches (parts or manufacturer name)
+                    if (filterValue !== '' && (sectionHasVisibleParts || manufacturerMatch)) {
+                         detailsElement.open = true;
+                    }
+                } else {
+                    section.style.display = 'none'; // Hide section if no parts match and name doesn't match
+                    section.open = false; // Close it if hidden
+                }
+            });
+
+
+            // Update UI when no matches found across all sections
+            if (noMatchesDisplay) {
+                noMatchesDisplay.style.display = anyMatchFound || filterValue === '' ? 'none' : 'block';
+            }
+
+            // If filter is cleared, reset section visibility and optionally close them
+             if (filterValue === '') {
+                 manufacturerSections.forEach(section => {
+                     section.style.display = ''; // Ensure all sections are visible
+                     section.querySelectorAll('.part-container').forEach(container => {
+                         container.style.display = ''; // Ensure all parts are visible
+                     });
+                     // Optional: close all sections when filter is cleared
+                     // section.open = false;
+                 });
+             }
+        });
+
+        // Clear filter when clicking the clear button
+        clearFilterBtn.addEventListener('click', function() {
+            filterInput.value = '';
+            filterInput.dispatchEvent(new Event('input')); // Trigger the input event to re-filter
+            filterInput.focus();
+        });
+
+        // Initialize counters on page load
+        document.addEventListener('DOMContentLoaded', () => {
+             document.querySelectorAll('.manufacturer-section').forEach(section => {
+                 const firstCheckbox = section.querySelector('input[type="checkbox"]');
+                 if (firstCheckbox) {
+                    updateCounter(firstCheckbox); // Initialize counter for each section
+                 } else {
+                    // Handle sections with no checkboxes (e.g., only a manufacturer name)
+                    const counter = section.querySelector('.part-counter');
+                    if(counter) counter.textContent = '0 selected'; // Set counter to 0
+                    const summary = section.querySelector('summary');
+                     if(summary) summary.classList.add('bg-gray-100'); // Ensure default background
+                 }
+             });
+        });
+
+    </script>
+</body>
+</html>
