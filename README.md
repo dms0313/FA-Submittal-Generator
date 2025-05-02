@@ -1,1 +1,1 @@
-This application allows quick preparation of various datasheets for permit submittals relating to commercial fire alarm.
+This application generates permit submittal packages in PDF format and automatically creates table of contents, cover page, and etc.
