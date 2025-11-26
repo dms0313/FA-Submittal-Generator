@@ -1,7 +1,7 @@
 import os
 import io
 import sys # Import sys for executable path
-from flask import Flask, render_template, request, send_file, abort
+from flask import Flask, render_template, request, send_file, abort, jsonify
 from pypdf import PdfReader, PdfWriter
 # --- ReportLab Imports ---
 from reportlab.pdfgen import canvas
@@ -16,6 +16,13 @@ try:
 except ImportError:
     print("Error: Pillow library not found. Please install it using 'pip install Pillow'")
     sys.exit(1)
+
+# --- Imports for AI Analysis ---
+import pytesseract
+from pdf2image import convert_from_bytes
+import cv2 # OpenCV for image processing
+import numpy as np
+import re # Regular expressions for finding part codes
 
 
 # --- Configuration ---
@@ -582,7 +589,107 @@ def generate_submittal_package(selected_parts, project_name, detail1, detail2):
         print("Buffer cleanup finished.")
 
 
+# --- AI Analysis Functions ---
+def get_all_part_codes():
+    """Extracts all unique part codes from the MANUFACTURER_DATA."""
+    all_codes = set()
+    for manufacturer in MANUFACTURER_DATA:
+        for part_code in MANUFACTURER_DATA[manufacturer].get('parts', {}):
+            all_codes.add(part_code)
+    return list(all_codes)
+
+def preprocess_image_for_ocr(image):
+    """Converts a PIL image to a format suitable for OCR."""
+    # Convert PIL Image to an OpenCV format (NumPy array)
+    open_cv_image = np.array(image)
+    # Convert RGB to BGR
+    open_cv_image = open_cv_image[:, :, ::-1].copy()
+
+    # Convert to grayscale
+    gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
+
+    # Apply adaptive thresholding to binarize the image
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                   cv2.THRESH_BINARY, 11, 2)
+
+    return thresh
+
+def analyze_plan_file(file_stream, file_filename):
+    """
+    Analyzes an uploaded plan file (PDF or image) to extract part codes using OCR.
+    """
+    print(f"--- Starting Analysis for file: {file_filename} ---")
+    all_known_parts = get_all_part_codes()
+    found_parts = set()
+
+    # Read the entire file into memory
+    file_bytes = file_stream.read()
+
+    try:
+        if file_filename.lower().endswith('.pdf'):
+            print("File identified as PDF. Converting to images...")
+            images = convert_from_bytes(file_bytes)
+        elif file_filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            print("File identified as Image. Loading...")
+            # Convert the byte stream to a NumPy array, then decode it
+            np_arr = np.frombuffer(file_bytes, np.uint8)
+            img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            # Convert the OpenCV image (BGR) to a PIL Image (RGB) for consistency
+            images = [PILImage.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))]
+        else:
+            print(f"Unsupported file type: {file_filename}")
+            return []
+
+        print(f"Processing {len(images)} pages/images...")
+        for i, img in enumerate(images):
+            print(f"  - Analyzing page {i+1}...")
+            # Preprocess the image to improve OCR accuracy
+            processed_img = preprocess_image_for_ocr(img)
+
+            # Use pytesseract to extract text
+            text = pytesseract.image_to_string(processed_img)
+
+            # --- Search for Part Codes in the Extracted Text ---
+            # This is a simple but effective way to find potential matches.
+            for part_code in all_known_parts:
+                # Use regex to find the part code as a whole word to avoid partial matches
+                if re.search(r'\b' + re.escape(part_code) + r'\b', text, re.IGNORECASE):
+                    found_parts.add(part_code)
+                    print(f"    Found potential match: {part_code}")
+
+    except Exception as e:
+        print(f"An error occurred during OCR processing: {e}")
+        # Depending on the error, you might want to handle it differently.
+        # For now, we'll just print it and return what we have found so far.
+        import traceback
+        traceback.print_exc()
+
+    print(f"--- Analysis Complete. Found {len(found_parts)} unique parts: {list(found_parts)} ---")
+    return list(found_parts)
+
 # --- Flask Routes ---
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    """Handles the plan file upload and analysis."""
+    if 'plan_file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files['plan_file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    if file:
+        try:
+            # The file object is a stream, which is what our analysis function will expect
+            found_parts = analyze_plan_file(file.stream, file.filename)
+            return jsonify({"found_parts": found_parts})
+        except Exception as e:
+            print(f"Error during file analysis: {e}")
+            return jsonify({"error": "An error occurred during analysis."}), 500
+
+    return jsonify({"error": "Unknown error"}), 500
+
+
 @app.route('/', methods=['GET'])
 def index():
     """Renders the main page with the part selection form."""
